@@ -9,7 +9,7 @@ outPrefix=${2:-./}
 inFolder_n=`basename $inFolder`
 outFolder=${outPrefix}${inFolder_n}.basecalled
 
-threads=12
+threads=8
 flowcell=FLO-MIN107
 kit=SQK-LSK308
 

@@ -32,10 +32,10 @@ class MyHandler(FileSystemEventHandler):
                 self.dir_counter[event_dir] += 1
                 if self.dir_counter[event_dir] == 4000: ## FIXME: as an argument
                     ## run command
-                    del self.dir_counter[event_dir]
                     tmp = subprocess.check_output(self.cmd.format(event_dir), shell = True)
                     print('Submitted dir {} ...'.format(event_dir))
-                
+                    ## del self.dir_counter[event_dir] ## FIXME: this is affected by slow I/O
+                    
     def on_created(self, event):
         self.process(event)
 
@@ -64,7 +64,7 @@ def main(arguments):
 
     try:
         while True:
-            time.sleep(1)
+            time.sleep(3)
     except KeyboardInterrupt:
         observer.stop()
     observer.join()
