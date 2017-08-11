@@ -17,6 +17,6 @@ python3 nanopore_watchdog.py -i /home/csb5/database/Minion/data/reads -l N057 -c
 * Linux OS (Tested with Ubuntu 16.04)
 * rsync
 * Python 3
-** watchdog
+* Python watchdog
 
 
