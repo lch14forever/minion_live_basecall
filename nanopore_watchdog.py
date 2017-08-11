@@ -42,7 +42,7 @@ class MyHandler(FileSystemEventHandler):
                         self.dir_counter.pop(event_dir, None)
                     else:
                         self.dir_counter[event_dir] += 1
-                        if self.dir_counter[event_dir] == 4: 
+                        if self.dir_counter[event_dir] == 4000: 
                             ## run command
                             tmp = subprocess.check_output(self.cmd.format(event_dir), shell = True)
                             print('Submitted dir {} ...'.format(event_dir))
@@ -62,7 +62,7 @@ class MyHandler(FileSystemEventHandler):
                         for k in self.dir_counter:
                             tmp = subprocess.check_output(self.cmd.format(k), shell = True)
                             print('Submitted final dirs {} ...'.format(k))
-                            
+                        ## find a way to exit
                 
     def on_created(self, event):
         self.process(event)
