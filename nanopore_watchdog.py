@@ -1,12 +1,25 @@
 #!/usr/bin/env python3
 
+__author__ = "Chenhao Li"
+__copyright__ = "Copyright 2017, Genome Institute of Singapore"
+__license__ = "MIT"
+__version__ = "0.0.1"
+__maintainer__ = "Chenhao Li"
+__email__ = "lich@gis.a-star.edu.sg"
+__status__ = "Dev"
+
 import os
 import sys
 import argparse
 import time
 import subprocess
+import pickle
+from glob import glob
 from watchdog.observers import Observer  
 from watchdog.events import FileSystemEventHandler
+
+## global variables
+FILE_PER_FOLDER=4
 
 def getext(filename):
     "Get the file extension"
@@ -14,14 +27,21 @@ def getext(filename):
     return file_ext
 
 class MyHandler(FileSystemEventHandler):
-    def __init__(self, cmd, library):
-        self.dir_counter = dict()
-        self.library = library
+    def __init__(self, toProcess_dir, processed_dir, cmd, library):
+        self.toProcess_dir = toProcess_dir ## dictionary of folders as keys and fast5 files inside as values
+        self.processed_dir = processed_dir ## list of folders
         self.cmd = cmd
+        self.library = library
         super(FileSystemEventHandler, self).__init__()
-    
+
+    def get_dict(self):
+        return {'toProcess':self.toProcess_dir, 'processed':self.processed_dir}
+        
     def process(self, event):
+        global FILE_PER_FOLDER
         if event.event_type=='created':
+            ## ::DEBUG::
+            # print(self.toProcess_dir)
             event_src = event.src_path
             bs = os.path.basename(event_src)
             ext = getext(event_src)
@@ -30,43 +50,60 @@ class MyHandler(FileSystemEventHandler):
                 if event.is_directory:
                     if bs.isdigit():
                         ## sub dir created, add dict entry
-                        self.dir_counter[event_src] = 0
+                        self.toProcess_dir[event_src] = []
                         print('Created dir {} ...'.format(event_src))
                     else:
-                        ## directory root or root/fast5 created
-                        pass
+                        print('Created root dir {} ...'.format(event_src))
+
                 elif not event.is_directory and ext=='fast5':
                     event_dir = os.path.dirname(event_src)
                     if 'mux_scan' in bs:
+                        print('Detected mux_scan dir {} (will not basecall) ...'.format(event_dir))
                         ##! do nothing to mux scan reads ! -- ## FIXME: might want to fix this
-                        self.dir_counter.pop(event_dir, None)
+                        self.toProcess_dir.pop(event_dir, None)
                     else:
-                        self.dir_counter[event_dir] += 1
-                        if self.dir_counter[event_dir] == 4000: 
+                        self.toProcess_dir[event_dir] += [event_src]
+                        if len(self.toProcess_dir[event_dir]) == FILE_PER_FOLDER: 
                             ## run command
                             tmp = subprocess.check_output(self.cmd.format(event_dir), shell = True)
                             print('Submitted dir {} ...'.format(event_dir))
-                            del self.dir_counter[event_dir] ## FIXME: this is affected by slow I/O
+                            del self.toProcess_dir[event_dir] ## FIXME: this is affected by slow I/O
+                            self.processed_dir += [event_dir]
                 elif not event.is_directory and ext=='SUCCESS':
                     ## sequencing run is done
-                    if len(self.dir_counter) == 0:
+                    if len(self.toProcess_dir) == 0:
                         pass
-                    elif len(self.dir_counter) == 1:
-                        event_src = list(self.dir_counter.keys())[0]
+                    elif len(self.toProcess_dir) == 1:
+                        event_src = list(self.toProcess_dir.keys())[0]
                         tmp = subprocess.check_output(self.cmd.format(event_src), shell = True)
                         print('Submitted final dir {} ...'.format(event_src))
                     else:
                         ## this should not happen ...
-                        sys.stderr.write("WARNING: Multiple directories have less than 4000 reads: \n" + ' '.join(self.dir_counter.keys()) + '\n')
+                        sys.stderr.write("WARNING: Multiple directories have less than 4000 reads: \n" + ' '.join(self.toProcess_dir.keys()) + '\n')
                         sys.stderr.write("Proceed anyways...\n")
-                        for k in self.dir_counter:
+                        for k in self.toProcess_dir:
                             tmp = subprocess.check_output(self.cmd.format(k), shell = True)
                             print('Submitted final dirs {} ...'.format(k))
+                    self.toProcess_dir = dict()
+                    self.processed_dir = []
                         ## find a way to exit
                 
     def on_created(self, event):
         self.process(event)
 
+def syn_dir(intermediate_dict, cmd):
+    global FILE_PER_FOLDER
+    full_dirs = []
+    for k in intermediate_dict:
+        intermediate_dict[k] = glob(k + '/*.fast5')
+        if len(intermediate_dict[k]) == FILE_PER_FOLDER:
+            full_dirs += [k]
+    for k in full_dirs:            
+        tmp = subprocess.check_output(cmd.format(k), shell = True)            
+        print('Updating folders -- submitted full dir {} ...'.format(k))
+        del intermediate_dict[k] ## FIXME: this is affected by slow I/O
+    return intermediate_dict
+        
 
 def main(arguments):
     parser = argparse.ArgumentParser(description=__doc__)
@@ -87,7 +124,19 @@ def main(arguments):
 
     args = parser.parse_args(arguments)
 
-    event_handler = MyHandler(args.cmd, args.library)
+    intermediate_file = args.inFolder+'/.WatchDog_BK.pkl'
+    if os.path.exists(intermediate_file):
+        with open(intermediate_file, 'rb') as f:
+            intermediate_dict = pickle.load(f)
+    else:
+        intermediate_dict = {'toProcess':dict(), 'processed':[] }
+
+    print("Syncronizing existing files...")
+    intermediate_dict['toProcess'] = syn_dir(intermediate_dict['toProcess'], args.cmd)
+    print("Done")
+
+    print("Watchdog ready! MinION run can be started... (Press Ctrl+C to exit...)")
+    event_handler = MyHandler(intermediate_dict['toProcess'], intermediate_dict['processed'], args.cmd, args.library)
     observer = Observer()
     observer.schedule(event_handler, path=args.inFolder, recursive=True)
     observer.start()
@@ -96,6 +145,9 @@ def main(arguments):
         while True:
             time.sleep(3)
     except KeyboardInterrupt:
+        print("Existing...")
+        with open(intermediate_file, 'wb') as f:
+            pickle.dump(event_handler.get_dict(), f, protocol=pickle.HIGHEST_PROTOCOL)
         observer.stop()
     observer.join()
 
