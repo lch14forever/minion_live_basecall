@@ -23,7 +23,7 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 ## global variables
-FILE_PER_FOLDER=4
+FILE_PER_FOLDER=4000
 
 def getext(filename):
     "Get the file extension"

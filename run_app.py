@@ -12,6 +12,8 @@ import signal
 
 SRC=''
 LIB=''
+CMD='~/database/Minion/Minion_softwares/minion_live_basecall/transfer_tmp.sh {}'
+##CMD='echo {}'
 
 process=None
 
@@ -25,15 +27,24 @@ def beginMonitor(btn):
     global SRC
     global LIB
     global process
+    global CMD
     script_dir = os.path.dirname(os.path.realpath(__file__))
     LIB = app.getEntry('lib')
-    process = subprocess.Popen([script_dir+'/nanopore_watchdog.py', '-i', SRC, '-l', LIB])
+    cmd = [script_dir+'/nanopore_watchdog.py', '-i', SRC, '-l', LIB, '-c', CMD]
+    process = subprocess.Popen(cmd)
 
 
-def stopMonitor(btn):
+
+def exitMonitor(btn):
     global SRC
     global process
     os.kill(process.pid, signal.SIGINT)
+
+def finishMonitor(btn):
+    global LIB
+    global SRC
+    success_flag = SRC + '/' + LIB + '.SUCCESS'
+    open(success_flag, 'a').close()
 
     
 app = gui()
@@ -58,6 +69,8 @@ app.addEntry("lib",1,0,4)
 
 
 # Begin Backup section
-app.addButton("Start", beginMonitor,2,0)
-app.addButton("Stop", stopMonitor,2,2)
+app.addButton("Start watchdog", beginMonitor,2,0)
+app.addButton("Stop watchdog", finishMonitor,2,1)
+app.addButton("Exit watchdog", exitMonitor,2,2)
+
 app.go()
