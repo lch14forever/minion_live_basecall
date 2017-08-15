@@ -128,6 +128,7 @@ def main(arguments):
                         default='./',
                         help="Folder to monitor [default: './']")
     parser.add_argument("-l", "--library",
+                        required=True,
                         help="Library ID to monitor")
     parser.add_argument("-c", "--cmd",
                         default="echo {}",
