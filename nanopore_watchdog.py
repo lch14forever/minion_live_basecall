@@ -44,10 +44,13 @@ class MyHandler(FileSystemEventHandler):
         
     def process(self, event):
         global FILE_PER_FOLDER
-        if event.event_type=='created':
+        if event.event_type=='created' or event.event_type=='moved':
             ## ::DEBUG::
             # print(self.toProcess_dir)
-            event_src = event.src_path
+            if event.event_type == 'moved':
+                event_src = event.dest_path
+            else:
+                event_src = event.src_path
             bs = os.path.basename(event_src)
             ext = getext(event_src)
             if self.library in event_src:
@@ -67,13 +70,17 @@ class MyHandler(FileSystemEventHandler):
                         ##! do nothing to mux scan reads ! -- ## FIXME: might want to fix this
                         self.toProcess_dir.pop(event_dir, None)
                     else:
-                        self.toProcess_dir[event_dir] += [event_src]
-                        if len(self.toProcess_dir[event_dir]) == FILE_PER_FOLDER: 
-                            ## run command
-                            tmp = subprocess.check_output(self.cmd.format(event_dir), shell = True)
-                            print('Submitted dir {} ...'.format(event_dir))
-                            del self.toProcess_dir[event_dir] ## FIXME: this is affected by slow I/O
-                            self.processed_dir += [event_dir]
+                        if event_dir in self.toProcess_dir:
+                            self.toProcess_dir[event_dir] += [event_src]
+                            if len(self.toProcess_dir[event_dir]) == FILE_PER_FOLDER: 
+                                ## run command
+                                tmp = subprocess.check_output(self.cmd.format(event_dir), shell = True)
+                                print('Submitted dir {} ...'.format(event_dir))
+                                del self.toProcess_dir[event_dir] ## FIXME: this is affected by slow I/O
+                                self.processed_dir += [event_dir]
+                        else:
+                            ## this happens when watchdog is started after minknow started
+                            pass
                 elif not event.is_directory and ext=='SUCCESS':
                     ## sequencing run is done
                     if len(self.toProcess_dir) == 0:
@@ -94,9 +101,13 @@ class MyHandler(FileSystemEventHandler):
                     ## find a way to exit
                     self.observer.stop()
                         
-    def on_created(self, event):
+    def on_any_event(self, event):
         self.process(event)
+        
+    # def on_moved(self, event):
+    #     self.process(event)
 
+        
 def syn_dir(intermediate_dict, cmd):
     global FILE_PER_FOLDER
     full_dirs = []
