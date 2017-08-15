@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+Nanopore watchdog for live reads handling.
+
+"""
 __author__ = "Chenhao Li"
 __copyright__ = "Copyright 2017, Genome Institute of Singapore"
 __license__ = "MIT"
@@ -27,11 +31,12 @@ def getext(filename):
     return file_ext
 
 class MyHandler(FileSystemEventHandler):
-    def __init__(self, toProcess_dir, processed_dir, cmd, library):
+    def __init__(self, toProcess_dir, processed_dir, cmd, library, observer):
         self.toProcess_dir = toProcess_dir ## dictionary of folders as keys and fast5 files inside as values
         self.processed_dir = processed_dir ## list of folders
         self.cmd = cmd
         self.library = library
+        self.observer = observer
         super(FileSystemEventHandler, self).__init__()
 
     def get_dict(self):
@@ -72,22 +77,23 @@ class MyHandler(FileSystemEventHandler):
                 elif not event.is_directory and ext=='SUCCESS':
                     ## sequencing run is done
                     if len(self.toProcess_dir) == 0:
-                        pass
+                        print('[Finishing] Nothing to submit')
                     elif len(self.toProcess_dir) == 1:
                         event_src = list(self.toProcess_dir.keys())[0]
                         tmp = subprocess.check_output(self.cmd.format(event_src), shell = True)
-                        print('Submitted final dir {} ...'.format(event_src))
+                        print('[Finishing] Submitted final dir {} ...'.format(event_src))
                     else:
                         ## this should not happen ...
                         sys.stderr.write("WARNING: Multiple directories have less than 4000 reads: \n" + ' '.join(self.toProcess_dir.keys()) + '\n')
                         sys.stderr.write("Proceed anyways...\n")
                         for k in self.toProcess_dir:
                             tmp = subprocess.check_output(self.cmd.format(k), shell = True)
-                            print('Submitted final dirs {} ...'.format(k))
+                            print('[Finishing] Submitted final dirs {} ...'.format(k))
                     self.toProcess_dir = dict()
                     self.processed_dir = []
-                        ## find a way to exit
-                
+                    ## find a way to exit
+                    self.observer.stop()
+                        
     def on_created(self, event):
         self.process(event)
 
@@ -124,7 +130,7 @@ def main(arguments):
 
     args = parser.parse_args(arguments)
 
-    intermediate_file = args.inFolder+'/.WatchDog_BK.pkl'
+    intermediate_file = args.inFolder+'/.'+ args.library +'.WatchDog_BK.pkl'
     if os.path.exists(intermediate_file):
         with open(intermediate_file, 'rb') as f:
             intermediate_dict = pickle.load(f)
@@ -136,19 +142,24 @@ def main(arguments):
     print("Done")
 
     print("Watchdog ready! MinION run can be started... (Press Ctrl+C to exit...)")
-    event_handler = MyHandler(intermediate_dict['toProcess'], intermediate_dict['processed'], args.cmd, args.library)
     observer = Observer()
+    event_handler = MyHandler(intermediate_dict['toProcess'], intermediate_dict['processed'], args.cmd, args.library, observer)
     observer.schedule(event_handler, path=args.inFolder, recursive=True)
     observer.start()
-
     try:
         while True:
-            time.sleep(3)
+            ## backup process every 30s
+            with open(intermediate_file, 'wb') as f:
+                pickle.dump(event_handler.get_dict(), f, protocol=pickle.HIGHEST_PROTOCOL)
+            time.sleep(30)
     except KeyboardInterrupt:
-        print("Existing...")
-        with open(intermediate_file, 'wb') as f:
-            pickle.dump(event_handler.get_dict(), f, protocol=pickle.HIGHEST_PROTOCOL)
-        observer.stop()
+        if observer.is_alive():
+            print("Existing...")
+            observer.stop()
+        else:
+            print("Succeeded!")
+            if os.path.exists(intermediate_file):
+                os.remove(intermediate_file)
     observer.join()
 
 
