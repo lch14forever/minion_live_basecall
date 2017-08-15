@@ -17,7 +17,7 @@ process=None
 
 def add_file_in(btn):
     global SRC
-    SRC = app.directoryBox('Source folder', './')
+    SRC = app.directoryBox('Source folder', '~/database/Minion/data/reads')
     ##SRC = askdirectory()
     app.setEntry('pathin', SRC)
     
@@ -41,23 +41,23 @@ app = gui()
 app.showSplash("Woof! Woof! Woof! Watchdog starting", fill="grey", stripe="#ADDFAD", fg="white", font=44)
 app.setTitle("Nanopore monitor in real-time")
 ##app.setIcon("icon.png")
-##app.setGeometry(400, 300)
+app.setGeometry(600, 102)
 app.setResizable(canResize=True)
 
 
 app.setSticky("ew")
 app.setStretch("column")
 
-app.addEntry('pathin', 0, 0, 2)
+app.addEntry('pathin', 0, 0, 4)
 app.setEntryDefault('pathin', 'Source folder')
-app.addButton('Choose source folder', add_file_in, 0, 2)
+app.addButton('Choose source folder', add_file_in, 0,6)
 
-app.addLabel("lib","Library name (eg. N053)",1,0,2)
-app.addEntry("lib",1,2,2)
+app.addLabel("lib","Library name (eg. N053)",1,6)
+app.addEntry("lib",1,0,4)
 
 
 
 # Begin Backup section
-app.addButton("Start", beginMonitor,2,0,2)
-app.addButton("Stop", stopMonitor,2,2,2)
+app.addButton("Start", beginMonitor,2,0)
+app.addButton("Stop", stopMonitor,2,2)
 app.go()

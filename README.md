@@ -4,19 +4,24 @@
 * run_albacore.sh - Wrapper to run Albacore
 
 ## Basic usage
-1. start the watchdog script on the desktop
+1. start the GUI
 ```
-python3 nanopore_watchdog.py -i /home/csb5/database/Minion/data/reads -l N057 -c 'SOME_TRANSFER_SCRIPT {}'
+python3 /home/csb5/database/Minion/Minion_softwares/minion_live_basecall/run_app.py
 ```
-2. start the MinION run
-3. stop MinION run
-4. **TO BE AUTOMATED** create a signal in the "reads/" folder (LIBRARY_ID.SUCCESS)
-5. **TO BE AUTOMATED** stop the watchdog 
+2. choose the directory to monitor, key in the library name to watch for and click on "Start"
+3. start the MinION run
+3. stop the MinION run
+4. click on "Stop"
+
+## To be implemented
+* Currently nothing is run for the folders
+* Compress the folder, transfer the folder and register into the database
+
 
 ## Dependency
 * Linux OS (Tested with Ubuntu 16.04)
 * rsync
 * Python 3
 * Python watchdog
-
+* python3-tk (Linux)
 
