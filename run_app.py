@@ -13,7 +13,6 @@ import signal
 MINKNOW_WD='~/database/Minion/data/reads'
 SRC=MINKNOW_WD
 LIB=''
-##CMD='~/database/Minion/Minion_softwares/minion_live_basecall/transfer_tmp.sh {}'
 CMD='echo {}'
 
 process=None
@@ -22,7 +21,6 @@ def add_file_in(btn):
     global SRC
     global MINKNOW_WD
     SRC = app.directoryBox('Source folder', MINKNOW_WD)
-    ##SRC = askdirectory()
     app.setEntry('pathin', SRC)
 
 def add_cmd_in(btn):
@@ -30,10 +28,7 @@ def add_cmd_in(btn):
     script_dir = os.path.dirname(os.path.realpath(__file__))
     CMD = app.openBox('Sript to run', script_dir)
     CMD += ' {}'
-    ##SRC = askdirectory()
     app.setEntry('cmdin', CMD)
-
-
     
 def beginMonitor(btn):
     global SRC
@@ -45,8 +40,6 @@ def beginMonitor(btn):
     cmd = [script_dir+'/nanopore_watchdog.py', '-i', SRC, '-l', LIB, '-c', CMD]
     process = subprocess.Popen(cmd)
 
-
-
 def exitMonitor(btn):
     global SRC
     global process
@@ -56,36 +49,36 @@ def finishMonitor(btn):
     global LIB
     global SRC
     success_flag = SRC + '/' + LIB + '.SUCCESS'
-    open(success_flag, 'a').close()
+    open(success_flag, 'a').close() ## touch flag file
 
-    
 app = gui()
 
+## Starting splash
 app.showSplash("Woof! Woof! Woof! Watchdog starting", fill="grey", stripe="#ADDFAD", fg="white", font=44)
+
+## app gui
 app.setTitle("Nanopore monitor in real-time")
 ##app.setIcon("icon.png")
 app.setGeometry(600, 140)
 app.setResizable(canResize=True)
-
-
 app.setSticky("ew")
 app.setStretch("column")
 
+## Directory to be monitored
 app.addEntry('pathin', 0, 0, 4)
 app.setEntryDefault('pathin', MINKNOW_WD)
 app.addButton('Choose source folder', add_file_in, 0,6)
 
+## Command script file selector
 app.addEntry('cmdin', 1, 0, 4)
 app.setEntryDefault('cmdin', CMD)
 app.addButton('Choose command script', add_cmd_in, 1,6)
 
-
+## Library ID entry
 app.addLabel("lib","Library name (eg. N053)",2,6)
 app.addEntry("lib",2,0,4)
 
-
-
-# Begin Backup section
+## buttons
 app.addButton("Start watchdog", beginMonitor,3,0)
 app.addButton("Stop watchdog", finishMonitor,3,1)
 app.addButton("Exit watchdog", exitMonitor,3,2)
