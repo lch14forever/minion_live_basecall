@@ -21,6 +21,7 @@ import pickle
 from glob import glob
 from watchdog.observers import Observer  
 from watchdog.events import FileSystemEventHandler
+import logging
 
 ## global variables
 FILE_PER_FOLDER=4000
@@ -37,8 +38,12 @@ class MyHandler(FileSystemEventHandler):
         self.cmd = cmd
         self.library = library
         self.observer = observer
+        self.processing_dir = dict() ## dictionary for folders as keys and the transfer proccessas values
         super(FileSystemEventHandler, self).__init__()
 
+    def get_submitted_process(self):
+        return self.processing_dir
+    
     def get_dict(self):
         return {'toProcess':self.toProcess_dir, 'processed':self.processed_dir}
         
@@ -46,7 +51,7 @@ class MyHandler(FileSystemEventHandler):
         global FILE_PER_FOLDER
         if event.event_type=='created' or event.event_type=='moved':
             ## ::DEBUG::
-            # print(self.toProcess_dir)
+            # logging.info(self.toProcess_dir)
             if event.event_type == 'moved':
                 event_src = event.dest_path
             else:
@@ -59,43 +64,46 @@ class MyHandler(FileSystemEventHandler):
                     if bs.isdigit():
                         ## sub dir created, add dict entry
                         self.toProcess_dir[event_src] = []
-                        print('Created dir {} ...'.format(event_src))
+                        logging.info('Created dir {} ...'.format(event_src))
                     else:
-                        print('Created root dir {} ...'.format(event_src))
+                        logging.info('Created root dir {} ...'.format(event_src))
 
                 elif not event.is_directory and ext=='fast5':
                     event_dir = os.path.dirname(event_src)
                     if 'mux_scan' in bs:
-                        print('Detected mux_scan dir {} (will not basecall) ...'.format(event_dir))
+                        logging.info('Detected mux_scan dir {} (will not basecall) ...'.format(event_dir))
                         ##! do nothing to mux scan reads ! -- ## FIXME: might want to fix this
                         self.toProcess_dir.pop(event_dir, None)
                     else:
                         if event_dir in self.toProcess_dir:
                             self.toProcess_dir[event_dir] += [event_src]
-                            if len(self.toProcess_dir[event_dir]) == FILE_PER_FOLDER: 
+                            if len(self.toProcess_dir[event_dir]) == FILE_PER_FOLDER:
                                 ## run command
-                                tmp = subprocess.check_output(self.cmd.format(event_dir), shell = True)
-                                print('Submitted dir {} ...'.format(event_dir))
+                                tmp = subprocess.Popen(self.cmd.format(event_dir), shell = True)                       
+                                logging.info('Submitted dir {} ...'.format(event_dir))
                                 del self.toProcess_dir[event_dir] ## FIXME: this is affected by slow I/O
                                 self.processed_dir += [event_dir]
+                                self.processing_dir[event_dir] = tmp
                         else:
                             ## this happens when watchdog is started after minknow started
                             pass
                 elif not event.is_directory and ext=='SUCCESS':
                     ## sequencing run is done
                     if len(self.toProcess_dir) == 0:
-                        print('[Finishing] Nothing to submit')
+                        logging.info('[Finishing] Nothing to submit')
                     elif len(self.toProcess_dir) == 1:
                         event_src = list(self.toProcess_dir.keys())[0]
-                        tmp = subprocess.check_output(self.cmd.format(event_src), shell = True)
-                        print('[Finishing] Submitted final dir {} ...'.format(event_src))
+                        tmp = subprocess.Popen(self.cmd.format(event_src), shell = True)
+                        logging.info('[Finishing] Submitted final dir {} ...'.format(event_src))
+                        self.processing_dir[event_src] = tmp
                     else:
                         ## this should not happen ...
-                        sys.stderr.write("WARNING: Multiple directories have less than 4000 reads: \n" + ' '.join(self.toProcess_dir.keys()) + '\n')
-                        sys.stderr.write("Proceed anyways...\n")
+                        logging.warning("WARNING: Multiple directories have less than 4000 reads: \n" + ' '.join(self.toProcess_dir.keys()) + '\n')
+                        logging.warning("Proceed anyways...\n")
                         for k in self.toProcess_dir:
-                            tmp = subprocess.check_output(self.cmd.format(k), shell = True)
-                            print('[Finishing] Submitted final dirs {} ...'.format(k))
+                            tmp = subprocess.Popen(self.cmd.format(k), shell = True)
+                            logging.info('[Finishing] Submitted final dirs {} ...'.format(k))
+                            self.processing_dir[k] = tmp
                     self.toProcess_dir = dict()
                     self.processed_dir = []
                     ## find a way to exit
@@ -116,8 +124,8 @@ def syn_dir(intermediate_dict, cmd):
         if len(intermediate_dict[k]) == FILE_PER_FOLDER:
             full_dirs += [k]
     for k in full_dirs:            
-        tmp = subprocess.check_output(cmd.format(k), shell = True)            
-        print('Updating folders -- submitted full dir {} ...'.format(k))
+        tmp = subprocess.Popen(cmd.format(k), shell = True)            
+        logging.info('Updating folders -- submitted full dir {} ...'.format(k))
         del intermediate_dict[k] ## FIXME: this is affected by slow I/O
     return intermediate_dict
         
@@ -142,6 +150,19 @@ def main(arguments):
 
     args = parser.parse_args(arguments)
 
+    
+    ## configure logging style
+    logFormatter = logging.Formatter("%(asctime)s [%(threadName)s] [%(levelname)s]  %(message)s")
+    rootLogger = logging.getLogger()
+    fileHandler = logging.FileHandler("{0}/{1}.watchdog.log".format(args.inFolder, args.library))
+    fileHandler.setFormatter(logFormatter)
+    rootLogger.addHandler(fileHandler)
+    rootLogger.setLevel(logging.INFO)
+    consoleHandler = logging.StreamHandler(sys.stdout)
+    consoleHandler.setFormatter(logFormatter)
+    rootLogger.addHandler(consoleHandler)
+
+        
     intermediate_file = args.inFolder+'/.'+ args.library +'.WatchDog_BK.pkl'
     if os.path.exists(intermediate_file):
         with open(intermediate_file, 'rb') as f:
@@ -149,11 +170,11 @@ def main(arguments):
     else:
         intermediate_dict = {'toProcess':dict(), 'processed':[] }
 
-    print("Syncronizing existing files...")
+    logging.info("Syncronizing existing files...")
     intermediate_dict['toProcess'] = syn_dir(intermediate_dict['toProcess'], args.cmd)
-    print("Done")
+    logging.info("Done")
 
-    print("Watchdog ready! MinION run can be started... (Press Ctrl+C to exit...)")
+    logging.info("Watchdog ready! MinION run can be started... (Press Ctrl+C to exit...)")
     observer = Observer()
     event_handler = MyHandler(intermediate_dict['toProcess'], intermediate_dict['processed'], args.cmd, args.library, observer)
     observer.schedule(event_handler, path=args.inFolder, recursive=True)
@@ -165,11 +186,23 @@ def main(arguments):
                 pickle.dump(event_handler.get_dict(), f, protocol=pickle.HIGHEST_PROTOCOL)
             time.sleep(30)
     except KeyboardInterrupt:
+        logging.info("Watchdog checking submitted folder status...")
+        while True:
+            submitted_process = event_handler.get_submitted_process()
+            exit_codes = {k:(submitted_process[k].poll()) for k in submitted_process.keys()}
+            if all(k is not None for k in exit_codes.values()):
+                for k,v in exit_codes.items():
+                    if v!=0:
+                        logging.warning("Submitted file {} had none zero exist status".format(k))
+                break
+            else:                
+                time.sleep(15)
+                
         if observer.is_alive():
-            print("Existing...")
+            logging.info("Existing...")
             observer.stop()
         else:
-            print("Succeeded!")
+            logging.info("Succeeded!")
             if os.path.exists(intermediate_file):
                 os.remove(intermediate_file)
     observer.join()
