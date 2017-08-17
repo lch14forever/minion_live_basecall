@@ -42,7 +42,7 @@ def beginMonitor(btn):
     global CMD
     script_dir = os.path.dirname(os.path.realpath(__file__))
     LIB = app.getEntry('lib')
-    cmd = [script_dir+'/nanopore_watchdog.py', '-i', SRC, '-l', LIB, '-c', CMD]
+    cmd = [sys.executable, script_dir+'/nanopore_watchdog.py', '-i', SRC, '-l', LIB, '-c', CMD]
     process = subprocess.Popen(cmd)
 
 
