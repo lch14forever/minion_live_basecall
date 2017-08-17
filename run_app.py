@@ -44,6 +44,7 @@ def exitMonitor(btn):
     global SRC
     global process
     os.kill(process.pid, signal.SIGINT)
+    ## FIXME: this does not work on windows -- Access Denied error
 
 def finishMonitor(btn):
     global LIB
