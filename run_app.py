@@ -41,9 +41,13 @@ def beginMonitor(btn):
     process = subprocess.Popen(cmd)
 
 def exitMonitor(btn):
-    global SRC
-    global process
-    os.kill(process.pid, signal.SIGINT)
+    if sys.platform == "win32":
+        # Windows...
+        app.stop()
+    else:
+        global SRC
+        global process
+        os.kill(process.pid, signal.SIGINT)
     ## FIXME: this does not work on windows -- Access Denied error
 
 def finishMonitor(btn):
@@ -82,6 +86,7 @@ app.addEntry("lib",2,0,4)
 ## buttons
 app.addButton("Start watchdog", beginMonitor,3,0)
 app.addButton("Stop watchdog", finishMonitor,3,1)
+
 app.addButton("Exit watchdog", exitMonitor,3,2)
 
 app.go()
