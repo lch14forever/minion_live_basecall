@@ -30,4 +30,4 @@ python3 /home/csb5/database/Minion/Minion_softwares/minion_live_basecall/run_app
 * Python 3
 * Python watchdog
 * python3-tk (Linux)
-
+* Pymongo -- interacting with GIS system
