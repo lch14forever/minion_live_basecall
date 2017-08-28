@@ -21,7 +21,7 @@ def transfer_file(source_file, cluster_cfg):
     target_file +=  '/' + cluster_cfg['libid'] + '/'   ## cluster path spec -- assuming linux
     cmd = ' '.join(['rsync -az --remove-source-files', source_file ,  cluster_cfg['login'] + ':' + target_file]) ## list does not work?
     tmp = subprocess.check_output(cmd, shell=True)
-    return target_file
+    return target_file + '/' + os.path.basename(source_file)
 
 def insert_muxjob(connection, mux, job):
     """Insert records into minion_tar_notification collection
@@ -116,7 +116,6 @@ def main(arguments):
         'status'    :   'unprocessed',
         'outsuffix' :   libid### what should this be?
     }
-
     tmp = insert_muxjob(conn, libid, record)
     
     
