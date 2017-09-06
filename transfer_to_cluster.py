@@ -9,6 +9,7 @@ import argparse
 import subprocess
 import pymongo
 import yaml
+import time
 import tarfile
 import hashlib
 
@@ -17,6 +18,7 @@ CLUSTER_CFG_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'cl
 
 
 def transfer_file(source_file, cluster_cfg):
+    ##TODO: I want something compatible for windows as well
     target_file = cluster_cfg['data_path']
     target_file +=  '/' + cluster_cfg['libid'] + '/'   ## cluster path spec -- assuming linux
     cmd = ' '.join(['rsync -az --remove-source-files', source_file ,  cluster_cfg['login'] + ':' + target_file]) ## list does not work?
@@ -102,6 +104,10 @@ def main(arguments):
     ##2. rsync to server
     cluster_cfg['libid'] = libid 
     cluster_tar_path = transfer_file(compressed_file, cluster_cfg)
+    # date_time = time.strftime('%Y-%m-%d %H:%M:%S')
+    # pattern = '%Y-%m-%d %H:%M:%S'
+    # epoch_present = int(time.mktime(time.strptime(date_time, pattern)))*1000
+    epoch_present = int(time.time())*1000
     ##3. register into MangoDB
     conn = mongodb_conn(True)
            
@@ -115,6 +121,7 @@ def main(arguments):
         'flowcell'  :   flowcell,
         'status'    :   'unprocessed',
         'outsuffix' :   libid### what should this be?
+        'timestamp' :   epoch_present
     }
     tmp = insert_muxjob(conn, libid, record)
     
