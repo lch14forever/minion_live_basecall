@@ -2,5 +2,6 @@
 *~
 .DS_Store
 *__pycache__*
+appJar/
 mongo.yaml
 cluster.yaml

@@ -89,6 +89,17 @@ class MyHandler(FileSystemEventHandler):
                             pass
                 elif not event.is_directory and ext=='SUCCESS':
                     ## sequencing run is done
+                    if len(self.toProcess_dir) != 0:
+                        ## prevent cases when watchdog misses certain file
+                        logging.info('[Checking] Investigating folders without 4000 reads')
+                        for k in self.toProcess_dir:
+                            if(len(glob(k + '/*fast5')) == FILE_PER_FOLDER):
+                                tmp = subprocess.Popen(self.cmd.format(k), shell = True)
+                                logging.info('[Checking] Submitted checked dir {} ...'.format(event_src))
+                                del self.toProcess_dir[k] 
+                                self.processed_dir += [k]
+                                self.processing_dir[k] = tmp
+                                
                     if len(self.toProcess_dir) == 0:
                         logging.info('[Finishing] Nothing to submit')
                     elif len(self.toProcess_dir) == 1:

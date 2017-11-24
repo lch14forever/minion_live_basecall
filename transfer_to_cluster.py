@@ -19,29 +19,28 @@ CLUSTER_CFG_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'cl
 
 def transfer_file(source_file, cluster_cfg):
     source_basename = os.path.basename(source_file)
+    target_folder = cluster_cfg['data_path']
+    target_folder +=  '/' + cluster_cfg['libid'] + '/'   ## cluster path spec -- assuming linux
+    target_file = target_folder + source_basename
+    # ## windows
     host = cluster_cfg['host']
     port = 22
     transport = paramiko.Transport((host, port))
     transport.connect(username=cluster_cfg['user'], password=cluster_cfg['password'])
     sftp = paramiko.SFTPClient.from_transport(transport)
-    target_folder = cluster_cfg['data_path']
-    target_folder +=  '/' + cluster_cfg['libid'] + '/'   ## cluster path spec -- assuming linux
     try:
         tmp=sftp.stat(target_folder) ## Initially the folder need to be created
     except IOError:
         sftp.mkdir(target_folder)
-    target_file = target_folder + source_basename
     sftp.put(source_file, target_file)
     sftp.close()
     transport.close()
-    # ##TODO: I want something compatible for windows as well
-    # target_file = cluster_cfg['data_path']
-    # target_file +=  '/' + cluster_cfg['libid'] + '/'   ## cluster path spec -- assuming linux
-    # login = ''.join([cluster_cfg['user'],"@", cluster_cfg['host'], ":"])
-    # os.environ["RSYNC_PASSWORD"] = cluster_cfg['password']
-    # cmd = ' '.join(['rsync -az --remove-source-files', source_file ,  login + target_file]) ## list does not work?
-    # tmp = subprocess.check_output(cmd, shell=True)
-    return target_file + '/' + source_basename
+    os.remove(source_file)
+    ## Linux
+    ##login = ''.join([cluster_cfg['user'],"@", cluster_cfg['host'], ":"])
+    ##cmd = ' '.join(['rsync -az --remove-source-files', source_file ,  login + target_file]) ## list does not work?
+    ##tmp = subprocess.check_output(cmd, shell=True)
+    return target_file 
 
 def insert_muxjob(connection, mux, job):
     """Insert records into minion_tar_notification collection
@@ -66,10 +65,8 @@ def mongodb_conn(use_test_server=False):
             sys.stderr.write("Error in loading {}\n".format(MONGO_CFG_FILE))
             raise
     if use_test_server:
-        ##sys.stderr.write("Using test MongoDB server\n")
         constr = mongo_conns['test']
     else:
-        ##sys.stderr.write("Using production MongoDB server\n")
         constr = mongo_conns['production']
     try:
         connection = pymongo.MongoClient(constr)
@@ -92,13 +89,13 @@ def make_tarfile(source_dir):
         hasher.update(buf)
     return [target_name, hasher.hexdigest()]
 
-def get_minion_param(source_dir):
+def get_minion_param(compressed_file):
     """
     get sequencing information libid, kit, flowcell
     """
-    lib_path = os.path.split(os.path.dirname(source_dir.rstrip(os.sep)))
+    lib_path = os.path.split(os.path.dirname(compressed_file.rstrip(os.sep)))
     assert(lib_path[-1]=='fast5') ## minknow default structure
-    date, time, libid, flowcell, kit = lib_path[-2].split('_')
+    date, time, libid, flowcell, kit = lib_path[-2].split('_')[-5:]
     return [libid, flowcell, kit]
 
 def main(arguments):
@@ -124,7 +121,7 @@ def main(arguments):
     cluster_tar_path = transfer_file(compressed_file, cluster_cfg)
     epoch_present = int(time.time())*1000
     ##3. register into MangoDB
-    conn = mongodb_conn(True)
+    conn = mongodb_conn()
            
     record = {
         'tar'       :   cluster_tar_path,
@@ -138,6 +135,7 @@ def main(arguments):
         'outsuffix' :   libid,### what should this be?
         'timestamp' :   epoch_present
     }
+    ##print(record)
     tmp = insert_muxjob(conn, libid, record)
 
     
