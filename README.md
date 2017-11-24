@@ -26,7 +26,7 @@ Start the shiny app in terminal:
 R -e "shiny::runApp('PATH_TO_REPO/minion_live_basecall/runApp')"
 ```
 
-Access in browser at <http://127.0.0.1:XXXX> (XXXX is the port number randomly selected by Shiny), or <http://localhost:4404>.
+Access in browser at <http://127.0.0.1:XXXX> (XXXX is the port number randomly selected by Shiny), or <http://localhost:XXXX>.
 
 ## Known issues
 1. Some problem with paramiko sftp on cluster -- potential fix with rsync?
@@ -41,3 +41,6 @@ Access in browser at <http://127.0.0.1:XXXX> (XXXX is the port number randomly s
 * Python watchdog
 * python3-tk (Linux)
 * Pymongo -- interacting with GIS system
+* R
+	- shiny
+	- shinyFiles
