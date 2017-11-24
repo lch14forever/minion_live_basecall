@@ -21,14 +21,14 @@ shinyUI(fluidPage(titlePanel("MinION Real-Time Sequencing Monitor"),
                     ),
   
                   mainPanel(
-                    h4("Folder Content:"),
-                    verbatimTextOutput("files"),
-                    br(),
                     h4("Monitoring files corresponding to Library ID:"),
                     verbatimTextOutput("runID"),
                     h4("Running commands for each folder:"),
                     verbatimTextOutput("cmd"),
-                    verbatimTextOutput("res")
+                    verbatimTextOutput("res"),
+                    h4("Folder Content:"),
+                    br(),
+                    verbatimTextOutput("files")
                   )
   
 ))) 

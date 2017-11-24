@@ -4,15 +4,15 @@ library(parallel)
 library(tools)
 
 shinyServer(function(input, output, session) {
-  watchdog <- paste0(getwd(),'/nanopore_watchdog.py')
+  watchdog <- paste0(getwd(),'/../nanopore_watchdog.py')
   
   # dir
-  shinyDirChoose(input, 'dir', roots = c(home = '~'), filetypes = c('', ''))
+  shinyDirChoose(input, 'dir', roots = c(Start = '/data'), filetypes = c('', ''))
   dir <- reactive(input$dir)
   
   # path
   path <- reactive({
-    home <- normalizePath("~")
+    home <- normalizePath("/data")
     file.path(home, paste(unlist(dir()$path[-1]), collapse = .Platform$file.sep))
   })
   
