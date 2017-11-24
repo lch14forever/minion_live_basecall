@@ -1,28 +1,38 @@
 # MinION live basecall utilities
 
-* nanopore_watchdog.py - Watchdog that monitoring MinKnow created directory structure
-* run_albacore.sh - Wrapper to run Albacore
+## Description
 
-## Basic usage
-0. start program on the server for live raw read processing (This could simply be the same nanopore_watchdog.py with the processing script)
-1. start the GUI
+I would like to build a cross-platform framework for processing Nanopore MinION sequencing data **LIVE**. The framework should have the following properties:
+1. Easy installation (I guess the requirements suggest a docker image!): 
+	- [ ] Cross platform
+	- [ ] Easy installation
+2. User friendly
+	- [x] A GUI for intiutive usage	
+	- [ ] One click starup
+3. Extendable (R shiny + Python watchdog + **Anything**)
+    - [x] The GUI runs the watchdog script, generates indicator for completion, and stop the watchdog script.
+    - [x] The watchdog takes care of MinKNOW generated files. It assumes that a folder is completed after 4000 fast5 files are generated.
+    - [ ] And many more opportunities... 
+    	- [x] Live basecall: script "transfer_to_cluster.py" is used for compressing the completed folder, transferring it to the cluster and informing NGSP for basecall with their framework.
+    	- [ ] Live assembly?
+    	- [ ] Live mapping?
+    	- [ ] Live metagenomics? Real-time detection of genes, pathogens, etc.
+
+## Usage:
+
+Start the shiny app in terminal:
+
+```{sh}
+R -e "shiny::runApp('PATH_TO_REPO/minion_live_basecall/runApp')"
 ```
-python3 /home/csb5/database/Minion/Minion_softwares/minion_live_basecall/run_app.py
-```
-2. choose the directory to monitor, key in the library ID to watch for and click on "Start watchdog"
-3. start the MinION run
-3. stop the MinION run
-4. click on "Stop watchdog": this will create an empty file [LIB_ID].SUCCESS in the MinKNOW working directory and let the watchdog submit the folders with less than 4000 reads (should only have 1)
-5. wait for the background processes (submitted) job to finish (print a message of "Succeeded!")
-6. click on "Exit watchdog": this will quit the watchdog script
-7. close the GUI
 
-## To be implemented
-* Compress the folder, transfer the folder and register into the database
+Access in browser at <http://127.0.0.1:XXXX> (XXXX is the port number randomly selected by Shiny), or <http://localhost:4404>.
 
-## Issues
-* On GIS nftp file system, rsync does not seem to work (events not detected).
-* On GIS nftp file system, scp *tar.gz files from local host to server does not trigger the creation event.
+## Known issues
+1. Some problem with paramiko sftp on cluster -- potential fix with rsync?
+2. Too many dependencies -- potential fix with docker?
+3. Cannot send SIGINT to script on windows with python previously. Can I do it with R?
+4. Seems only works on MAC OS or Linux OS now. Windows is a must since few lab people will use unix like systems.
 
 ## Dependency
 * Linux OS (Tested with Ubuntu 16.04)
