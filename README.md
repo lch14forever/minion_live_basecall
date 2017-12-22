@@ -47,12 +47,13 @@ R -e "shiny::runApp('PATH_TO_REPO/minion_live_basecall/runApp')"
 ```
 ![](watchdog_shinyApp.png)
 
+Access in browser at <http://127.0.0.1:XXXX> (XXXX is the port number randomly selected by Shiny), or <http://localhost:XXXX>.
+
 ### Using command line version
 ```{sh}
 PATH_TO_REPO/nanopore_watchdog.py -i <Folder to monitor> -l <Lib ID> -c "PATH_TO_REPO/transfer_to_cluster.py {}"
 ```
 
-Access in browser at <http://127.0.0.1:XXXX> (XXXX is the port number randomly selected by Shiny), or <http://localhost:XXXX>.
 
 ## Known issues
 1. Some problem with paramiko sftp on cluster -- potential fix with rsync?
