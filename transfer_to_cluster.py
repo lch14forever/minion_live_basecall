@@ -23,23 +23,25 @@ def transfer_file(source_file, cluster_cfg):
     target_folder +=  '/' + cluster_cfg['libid'] + '/'   ## cluster path spec -- assuming linux
     target_file = target_folder + source_basename
     # ## windows
-    host = cluster_cfg['host']
-    port = 22
-    transport = paramiko.Transport((host, port))
-    transport.connect(username=cluster_cfg['user'], password=cluster_cfg['password'])
-    sftp = paramiko.SFTPClient.from_transport(transport)
-    try:
-        tmp=sftp.stat(target_folder) ## Initially the folder need to be created
-    except IOError:
-        sftp.mkdir(target_folder)
-    sftp.put(source_file, target_file)
-    sftp.close()
-    transport.close()
-    os.remove(source_file)
-    ## Linux
-    ##login = ''.join([cluster_cfg['user'],"@", cluster_cfg['host'], ":"])
-    ##cmd = ' '.join(['rsync -az --remove-source-files', source_file ,  login + target_file]) ## list does not work?
-    ##tmp = subprocess.check_output(cmd, shell=True)
+    if (sys.platform.startswith('win')):
+        host = cluster_cfg['host']
+        port = 22
+        transport = paramiko.Transport((host, port))
+        transport.connect(username=cluster_cfg['user'], password=cluster_cfg['password'])
+        sftp = paramiko.SFTPClient.from_transport(transport)
+        try:
+            tmp=sftp.stat(target_folder) ## Initially the folder need to be created
+        except IOError:
+            sftp.mkdir(target_folder)
+        sftp.put(source_file, target_file)
+        sftp.close()
+        transport.close()
+        os.remove(source_file)
+    else:
+    ## Linux or Mac use rsync
+        login = ''.join([cluster_cfg['user'],"@", cluster_cfg['host'], ":"])
+        cmd = ' '.join(['rsync -az --remove-source-files', source_file , login + target_folder]) ## list does not work?
+        tmp = subprocess.check_output(cmd, shell=True)
     return target_file 
 
 def insert_muxjob(connection, mux, job):

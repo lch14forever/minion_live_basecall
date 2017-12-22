@@ -49,7 +49,7 @@ class MyHandler(FileSystemEventHandler):
         
     def process(self, event):
         global FILE_PER_FOLDER
-        if event.event_type=='created' or event.event_type=='moved':
+        if event.event_type=='created' or event.event_type=='moved' or event.event_type=='modified':
             ## ::DEBUG::
             # logging.info(self.toProcess_dir)
             if event.event_type == 'moved':
@@ -87,7 +87,8 @@ class MyHandler(FileSystemEventHandler):
                         else:
                             ## this happens when watchdog is started after minknow started
                             pass
-                elif not event.is_directory and ext=='SUCCESS':
+            elif not event.is_directory and bs=='exec_end_history.txt':
+                if self.library in open(event_src):
                     ## sequencing run is done
                     if len(self.toProcess_dir) != 0:
                         ## prevent cases when watchdog misses certain file
@@ -188,7 +189,7 @@ def main(arguments):
     logging.info("Watchdog ready! MinION run can be started... (Press Ctrl+C to exit...)")
     observer = Observer()
     event_handler = MyHandler(intermediate_dict['toProcess'], intermediate_dict['processed'], args.cmd, args.library, observer)
-    observer.schedule(event_handler, path=args.inFolder, recursive=True)
+    observer.schedule(event_handler, path=os.path.dirname(args.inFolder), recursive=True)
     observer.start()
     try:
         while True:
