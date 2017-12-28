@@ -3,13 +3,12 @@
 ## Description
 
 I would like to build a cross-platform framework for processing Nanopore MinION sequencing data **LIVE**. The framework should have the following properties:
-1. Easy installation (I guess the requirements suggest a docker image!):
-   	- [x] A docker image added (but the port is different now--probabily can kill by something like "ps aux")
-	- [ ] Cross platform
-	- [ ] Easy installation
+1. Easy installation 
+    - A docker image is created for windows users
 2. User friendly
-	- [x] A GUI for intiutive usage	
-	- [ ] One click starup
+	- Web (shiny) app GUI for intiutive usage	
+	- One click starup
+    - [ ] interactive logging for the subprocesses
 3. Extendable (R shiny + Python watchdog + **Anything**)
     - [x] The GUI runs the watchdog script, generates indicator for completion, and stop the watchdog script.
     - [x] The watchdog takes care of MinKNOW generated files. It assumes that a folder is completed after 4000 fast5 files are generated.
@@ -40,12 +39,15 @@ MinKNOW will wirte information to `exec_end_history.txt` after a run finishes. T
 
 ## Usage:
 
-### Using docker image
+### Using docker image (Any platform)
 ```{sh}
 cat DOCKER_FILE | docker build  - -t watchdog
 docker run -it   --rm -p 3838:3838   -v PATH_TO_REPO/minion_live_basecall/:/srv/shiny-server/ -v /var/log/:/var/log/shiny-server/ -v PATH_TO_DATA:/data watchdog bash
 ```
-### Using the shiny app
+
+Access the app at <http://localhost:3838/runApp/>.
+
+### Using the shiny app (MacOS and Linux)
 
 Start the shiny app in terminal:
 ```{sh}
@@ -61,20 +63,19 @@ PATH_TO_REPO/nanopore_watchdog.py -i <Folder to monitor> -l <Lib ID> -c "PATH_TO
 ```
 
 
-## Known issues
-1. Some problem with paramiko sftp on cluster -- potential fix with rsync?
-2. Too many dependencies -- potential fix with docker?
-3. Cannot send SIGINT to script on windows with python previously. Can I do it with R?
-4. Seems only works on MAC OS or Linux OS now. Windows is a must since few lab people will use unix like systems.
-5. I can't kill the process inside Docker??
-
-## Dependency
-* Linux OS (Tested with Ubuntu 16.04)
-* rsync
-* Python 3
-* Python watchdog
-* python3-tk (Linux)
-* Pymongo -- interacting with GIS system
-* R
-	- shiny
-	- shinyFiles
+## Dependency of scripts
+* Docker image:
+    - Docker
+* ShinyApp:
+    - System
+        - Linux or MacOS
+    - Python (>3)
+        - python-tk (only Linux)
+        - watchdog
+    - R (>3.4)
+        - shiny
+        - shinyFiles
+* Sub-functions
+    - Transfer to cluster
+        - pymongo (python)  
+        - rsync (Linux or MacOS)
