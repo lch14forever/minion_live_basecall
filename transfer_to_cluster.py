@@ -40,7 +40,8 @@ def transfer_file(source_file, cluster_cfg):
     else:
     ## Linux or Mac use rsync
         login = ''.join([cluster_cfg['user'],"@", cluster_cfg['host'], ":"])
-        cmd = ' '.join(['rsync -az --remove-source-files', source_file , login + target_folder]) ## list does not work?
+        cmd = ' '.join(['rsync -az --remove-source-files --chmod=a+rx ',
+                        source_file , login + target_folder]) ## list does not work?
         tmp = subprocess.check_output(cmd, shell=True)
     return target_file 
 
