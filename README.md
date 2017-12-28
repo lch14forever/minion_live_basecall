@@ -6,8 +6,8 @@ I would like to build a cross-platform framework for processing Nanopore MinION 
 1. Easy installation 
     - A docker image is created for windows users
 2. User friendly
-	- Web (shiny) app GUI for intiutive usage	
-	- One click starup
+    - Web (shiny) app GUI for intiutive usage	
+    - One click starup
     - [ ] interactive logging for the subprocesses
 3. Extendable (R shiny + Python watchdog + **Anything**)
     - [x] The GUI runs the watchdog script, generates indicator for completion, and stop the watchdog script.
@@ -42,8 +42,13 @@ MinKNOW will wirte information to `exec_end_history.txt` after a run finishes. T
 ### Using docker image (Any platform)
 ```{sh}
 cat DOCKER_FILE | docker build  - -t watchdog
-docker run -it   --rm -p 3838:3838   -v PATH_TO_REPO/minion_live_basecall/:/srv/shiny-server/ -v /var/log/:/var/log/shiny-server/ -v PATH_TO_DATA:/data watchdog bash
+docker run -it   --rm -p 3838:3838   -v PATH_TO_REPO/minion_live_basecall/:/srv/shiny-server/ -v /var/log/:/var/log/shiny-server/ -v PATH_TO_DATA:/home/data watchdog bash
 ```
+
+This will mount:
+    - the script directory to `/srv/shiny-server/` for accessing the scripts and the shiny app.
+    - `/var/log/` to `/var/log/shiny-server` for any **shiny** produced log files.
+    - path to be monitored (MinKNOW's data directory) to `/home/data` for monitor inside the docker image
 
 Access the app at <http://localhost:3838/runApp/>.
 

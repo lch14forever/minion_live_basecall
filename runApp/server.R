@@ -7,12 +7,12 @@ shinyServer(function(input, output, session) {
   watchdog <- paste0(getwd(),'/../nanopore_watchdog.py')
   
   # dir
-  shinyDirChoose(input, 'dir', roots = c(Start = '/data'), filetypes = c('', ''))
+  shinyDirChoose(input, 'dir', roots = c(Start = '/home'), filetypes = c('', ''))
   dir <- reactive(input$dir)
   
   # path
   path <- reactive({
-    home <- normalizePath("/data")
+    home <- normalizePath("/home")
     file.path(home, paste(unlist(dir()$path[-1]), collapse = .Platform$file.sep))
   })
   
