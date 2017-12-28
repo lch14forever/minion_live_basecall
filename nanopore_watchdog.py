@@ -87,7 +87,7 @@ class MyHandler(FileSystemEventHandler):
                             pass
             elif not event.is_directory and bs=='exec_end_history.txt':
                 logging.info('!!!!!!!!!!!!!!!Change in exec_end_history.txt!!!!!!!!!!')
-                logging.info(open(event_src.read()))
+                logging.info(open(event_src).read())
                 if self.library in open(event_src).read():
                     ## sequencing run is done
                     if len(self.toProcess_dir) != 0:
