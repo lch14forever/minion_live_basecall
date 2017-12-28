@@ -34,10 +34,11 @@ shinyServer(function(input, output, session) {
   })
   output$cmd <- renderText(cmd())
 
-  cmd_getPID <- reactive({paste('ps a | grep -i watchdog | grep python3 | grep ', 
+  cmd_getPID <- reactive({paste('ps ax | grep -i watchdog | grep python3 | grep ', 
                                 input$runID , 
                                 ' | tail -n1 | awk \'{print $1}\' ',
                                 sep=' ')})
+ 
   
   # run script
   rv <- reactiveValues(
