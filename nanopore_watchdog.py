@@ -86,12 +86,14 @@ class MyHandler(FileSystemEventHandler):
                             ## this happens when watchdog is started after minknow started
                             pass
             elif not event.is_directory and bs=='exec_end_history.txt':
+                logging.info('!!!!!!!!!!!!!!!Change in exec_end_history.txt!!!!!!!!!!')
+                logging.info(open(event_src.read()))
                 if self.library in open(event_src).read():
                     ## sequencing run is done
                     if len(self.toProcess_dir) != 0:
                         ## prevent cases when watchdog misses certain file
                         logging.info('[Checking] Investigating folders without 4000 reads')
-                        tmp_toProcess_dir = self.toProcess_dir 
+                        tmp_toProcess_dir = list(self.toProcess_dir.keys())
                         for k in tmp_toProcess_dir:
                             if(len(glob(k + '/*fast5')) == FILE_PER_FOLDER):
                                 tmp = subprocess.Popen(self.cmd.format(k), shell = True)
