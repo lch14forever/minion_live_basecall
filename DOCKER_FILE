@@ -1,0 +1,24 @@
+############################################################
+# Dockerfile to build nanopore watchdog
+# Based on Shiny
+############################################################
+
+FROM rocker/shiny
+MAINTAINER Chenhao Li (lich@gis.a-star.edu.sg)
+
+RUN apt-get update 
+
+################## BEGIN INSTALLATION ######################
+## install system pacakges
+RUN apt-get -y install rsync procps
+
+## install python packages
+RUN apt-get install -y  python3-watchdog python3-paramiko python3-pymongo
+
+# Install additional R package
+RUN R -e "install.packages('shinyFiles', repos='http://cran.us.r-project.org')"
+
+##################### INSTALLATION END #####################
+RUN adduser shiny docker
+ENTRYPOINT shiny-server.sh
+

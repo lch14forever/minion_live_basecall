@@ -3,7 +3,8 @@
 ## Description
 
 I would like to build a cross-platform framework for processing Nanopore MinION sequencing data **LIVE**. The framework should have the following properties:
-1. Easy installation (I guess the requirements suggest a docker image!): 
+1. Easy installation (I guess the requirements suggest a docker image!):
+   	- [x] A docker image added (but the port is different now--probabily can kill by something like "ps aux")
 	- [ ] Cross platform
 	- [ ] Easy installation
 2. User friendly
@@ -39,6 +40,11 @@ MinKNOW will wirte information to `exec_end_history.txt` after a run finishes. T
 
 ## Usage:
 
+### Using docker image
+```{sh}
+cat DOCKER_FILE | docker build  - -t watchdog
+docker run -it   --rm -p 3838:3838   -v PATH_TO_REPO/minion_live_basecall/:/srv/shiny-server/ -v /var/log/:/var/log/shiny-server/ -v PATH_TO_DATA:/data watchdog bash
+```
 ### Using the shiny app
 
 Start the shiny app in terminal:
@@ -60,6 +66,7 @@ PATH_TO_REPO/nanopore_watchdog.py -i <Folder to monitor> -l <Lib ID> -c "PATH_TO
 2. Too many dependencies -- potential fix with docker?
 3. Cannot send SIGINT to script on windows with python previously. Can I do it with R?
 4. Seems only works on MAC OS or Linux OS now. Windows is a must since few lab people will use unix like systems.
+5. I can't kill the process inside Docker??
 
 ## Dependency
 * Linux OS (Tested with Ubuntu 16.04)
