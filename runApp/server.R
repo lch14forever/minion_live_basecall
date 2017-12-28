@@ -33,6 +33,11 @@ shinyServer(function(input, output, session) {
                          ,'{}"', sep=' ')
   })
   output$cmd <- renderText(cmd())
+
+  cmd_getPID <- reactive({paste('ps a | grep -i watchdog | grep python3 | grep ', 
+                                input$runID , 
+                                ' | tail -n1 | awk \'{print $1}\' ',
+                                sep=' ')})
   
   # run script
   rv <- reactiveValues(
@@ -43,7 +48,8 @@ shinyServer(function(input, output, session) {
   observeEvent(input$go, {
     if(!is.null(rv$id$pid)) return()
     rv$id <- mcparallel({ system( cmd() ) }) 
-    rv$id$pid <- rv$id$pid + 1 ## this system call is not the actual mcparallel object
+    rv$id$pid <- as.numeric(system(cmd_getPID(), intern = TRUE))
+        ##rv$id$pid + 2 ## this system call is not the actual mcparallel object
   })
   
   observeEvent(input$stop, {
