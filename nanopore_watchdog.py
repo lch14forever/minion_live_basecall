@@ -56,7 +56,7 @@ class MyHandler(FileSystemEventHandler):
                 event_src = event.src_path
             bs = os.path.basename(event_src)
             ext = getext(event_src)
-            if self.library in event_src and event.event_type!='modified':
+            if self.library in event_src and event.event_type!='modified' and bs!='exec_end_history.txt':
                 ## created a folder/file belongs to this library
                 if event.is_directory:
                     if bs.isdigit():
