@@ -23,11 +23,22 @@ shinyServer(function(input, output, session) {
   # run ID
   output$runID <- renderText(input$runID)
   
+  script_list <- c(paste0(getwd(),'/../transfer_to_cluster.py'),
+                   paste0(getwd(),'/../transfer_to_cluster.py'),
+                   paste0(getwd(),'/../transfer_to_cluster.py'))
   # script setup
   cmd <- reactive({paste(watchdog, 
-                         '-i', path(), '-l', input$runID, '-c', '"echo {}"', sep=' ')
+                         '-i', path(), '-l', input$runID, '-c "', 
+                         script_list[as.numeric(input$script)]
+                         ,'{}"', sep=' ')
   })
   output$cmd <- renderText(cmd())
+
+  cmd_getPID <- reactive({paste('ps ax | grep -i watchdog | grep python3 | grep ', 
+                                input$runID , 
+                                ' | tail -n1 | awk \'{print $1}\' ',
+                                sep=' ')})
+ 
   
   # run script
   rv <- reactiveValues(
@@ -38,13 +49,8 @@ shinyServer(function(input, output, session) {
   observeEvent(input$go, {
     if(!is.null(rv$id$pid)) return()
     rv$id <- mcparallel({ system( cmd() ) }) 
-    rv$id$pid <- rv$id$pid + 1 ## this system call is not the actual mcparallel object
-  })
-  
-  observeEvent(input$done, {
-    if(is.null(rv$id$pid)) return()
-    file.create(paste0(path(), '/', input$runID, '.SUCCESS'))
-    rv$msg <- sprintf("Created flag file for run completion!")
+    rv$id$pid <- as.numeric(system(cmd_getPID(), intern = TRUE))
+        ##rv$id$pid + 2 ## this system call is not the actual mcparallel object
   })
   
   observeEvent(input$stop, {
@@ -59,7 +65,7 @@ shinyServer(function(input, output, session) {
     if(!is.null(rv$id$pid)){
       res <- mccollect(rv$id,wait=F)
       if(is.null(res)){
-        rv$msg <- sprintf("Watchdog script (pid %1$s) in process!\nLog file: %2$s/%3$s.watchdog.log\nPress \"Run finished\" after stopping MinION.\nPress \"Stop\" to finish (will inspect the folders without 4000 reads).",
+        rv$msg <- sprintf("Watchdog script (pid %1$s) in process!\nLog file: %2$s/%3$s.watchdog.log\nPress \"Stop\" to finish (will inspect the folders without 4000 reads).",
                           rv$id$pid, path(), input$runID)
       }else{
         rv$msg <- jsonlite::toJSON(res)

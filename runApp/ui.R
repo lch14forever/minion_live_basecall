@@ -10,11 +10,11 @@ shinyUI(fluidPage(titlePanel("MinION Real-Time Sequencing Monitor"),
                       textInput("runID", h3("Run ID"), 
                                 value = "N060"),
                       actionButton("go", "Start"),
-                      actionButton("done", "Run finished", class='btn-success'),
-                      actionButton("stop", "Stop",class="btn-danger")
-                      # selectInput("flowcell", h3("Flow cell"), 
-                      #             choices = list("FLO-MIN107" = 1, "FLO-MIN107" = 2,
-                      #                            "FLO-MIN107" = 3), selected = 1),
+                      actionButton("stop", "Stop",class="btn-danger"),
+                      selectInput("script", h3("Processing script"), 
+                                   choices = list("transfer_to_cluster.py" = 1, 
+                                                  "transfer_to_cluster.py" = 2,
+                                                  "transfer_to_cluster.py" = 3), selected = 1)
                       # selectInput("kit", h3("Kit"), 
                       #             choices = list("SQK-LSK308 (1d2)" = 1, "SQK-LSK308 (1d2)" = 2,
                       #                            "SQK-LSK308 (1d2)" = 3), selected = 1)
