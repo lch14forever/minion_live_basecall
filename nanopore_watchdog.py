@@ -85,7 +85,7 @@ class MyHandler(FileSystemEventHandler):
                         else:
                             ## this happens when watchdog is started after minknow started
                             pass
-            elif not event.is_directory and bs=='exec_end_history.txt':
+            elif not event.is_directory and bs=='exec_end_history.txt' and len(self.processing_dir)>0:
                 logging.info('!!!!!!!!!!!!!!!Change in exec_end_history.txt!!!!!!!!!!')
                 logging.info(open(event_src).read())
                 if self.library in open(event_src).read():
