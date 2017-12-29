@@ -56,9 +56,9 @@ class MyHandler(FileSystemEventHandler):
                 event_src = event.src_path
             bs = os.path.basename(event_src)
             ext = getext(event_src)
-            if self.library in event_src and event.event_type!='modified' and bs!='exec_end_history.txt':
+            if self.library in event_src and bs!='exec_end_history.txt':
                 ## created a folder/file belongs to this library
-                if event.is_directory:
+                if event.is_directory and event.event_type!='modified':
                     if bs.isdigit():
                         ## sub dir created, add dict entry
                         self.toProcess_dir[event_src] = []
@@ -85,10 +85,11 @@ class MyHandler(FileSystemEventHandler):
                         else:
                             ## this happens when watchdog is started after minknow started
                             pass
-            elif not event.is_directory and bs=='exec_end_history.txt' and len(self.processing_dir)>0:
-                logging.info('!!!!!!!!!!!!!!!Change in exec_end_history.txt!!!!!!!!!!')
-                logging.info(open(event_src).read())
-                if self.library in open(event_src).read():
+            elif not event.is_directory and bs=='exec_end_history.txt' :#and len(self.processing_dir)>0:
+                history_content = open(event_src).read()
+                ##logging.info('!!!!!!!!!!!!!!!Change in exec_end_history.txt!!!!!!!!!!')
+                ##logging.info(history_content)
+                if self.library in history_content and 'sequencing_run' in history_content:
                     ## sequencing run is done
                     if len(self.toProcess_dir) != 0:
                         ## prevent cases when watchdog misses certain file
