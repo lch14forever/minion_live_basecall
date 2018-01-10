@@ -18,7 +18,7 @@ I would like to build a cross-platform framework for processing Nanopore MinION 
     	- [ ] Live mapping?
     	- [ ] Live metagenomics? Real-time detection of genes, pathogens, etc.
 
-## How it works?
+## How does it work?
 
 The main script `nanopore_watchdog.py` monitors a MinKNOW created dircetory structure for any I/O events:
 
@@ -35,7 +35,7 @@ The main script `nanopore_watchdog.py` monitors a MinKNOW created dircetory stru
 
 The script detect creation of the numbered folders (fast5/0, fast5/1, ...) and the fast5 files (ending with "fast5") in the folders. It keeps track of the file number of each folder. Once a folder has 4000 reads, it will call a processing script (e.g. `transfer_to_cluster.py`).
 
-MinKNOW will wirte information to `exec_end_history.txt` after a run finishes. The script then submit the last folder, which contains less than 4000 reads usually.
+MinKNOW will write information to `exec_end_history.txt` after a run finishes. The script then submit the last folder, which contains less than 4000 reads usually.
 
 ## Usage:
 
