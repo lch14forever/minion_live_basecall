@@ -17,11 +17,13 @@ import paramiko
 MONGO_CFG_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'mongo.yaml')
 CLUSTER_CFG_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'cluster.yaml')
 
-def transfer_file(source_file, cluster_cfg):
+def transfer_file(source_file, cluster_cfg, dryrun):
     source_basename = os.path.basename(source_file)
     target_folder = cluster_cfg['data_path']
     target_folder +=  '/' + cluster_cfg['libid'] + '/'   ## cluster path spec -- assuming linux
     target_file = target_folder + source_basename
+    if(dryrun):
+        return target_file
     # ## windows
     if (sys.platform.startswith('win')):
         host = cluster_cfg['host']
@@ -79,12 +81,15 @@ def mongodb_conn(use_test_server=False):
     ##sys.stderr.write("Database connection established\n")
     return connection
         
-def make_tarfile(source_dir):
+def make_tarfile(source_dir, dryrun):
     """
     create a tar file from a directory
     """
     target_name = source_dir.rstrip(os.sep) + '.tar.gz'
+    if(dryrun):
+        return [target_name, 'DryRunWithoutOutput']
     with tarfile.open(target_name, "w:gz") as tar:
+        tar.dereference = True
         tar.add(source_dir, arcname=os.path.basename(source_dir))
     hasher = hashlib.sha1()
     with open(target_name, 'rb') as afile:
@@ -104,8 +109,13 @@ def get_minion_param(compressed_file):
 def main(arguments):
     parser = argparse.ArgumentParser(description=__doc__)    
     parser.add_argument('inFolder', help="Input folder (A folder containing fast5 files)")
+    parser.add_argument('--dryrun',
+                        action = "store_true",
+                        dest   = "dryrun",
+                        default= False,
+                        help   = "Do not register to the database, print the database entry"
+    )
     args = parser.parse_args(arguments)
-
     ## load cluster config file
     with open(CLUSTER_CFG_FILE, 'r') as stream:
         try:
@@ -117,11 +127,11 @@ def main(arguments):
     ##1. compress
     ## FIXME: add error/exception handling
     source_dir = os.path.abspath(args.inFolder)
-    compressed_file, tar_sha1 = make_tarfile(source_dir)
+    compressed_file, tar_sha1 = make_tarfile(source_dir, args.dryrun)
     libid, flowcell, kit = get_minion_param(compressed_file)
     ##2. rsync to server
     cluster_cfg['libid'] = libid 
-    cluster_tar_path = transfer_file(compressed_file, cluster_cfg)
+    cluster_tar_path = transfer_file(compressed_file, cluster_cfg, args.dryrun)
     epoch_present = int(time.time())*1000
     ##3. register into MangoDB
     conn = mongodb_conn()
@@ -138,8 +148,10 @@ def main(arguments):
         'outsuffix' :   libid,### what should this be?
         'timestamp' :   epoch_present
     }
-    ##print(record)
-    tmp = insert_muxjob(conn, libid, record)
+    if args.dryrun == True:
+        print(record)
+    else:
+        tmp = insert_muxjob(conn, libid, record)
 
     
 if __name__ == '__main__':

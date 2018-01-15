@@ -31,7 +31,8 @@ full_1dsq_basecaller.py -i $tmp_inFolder -t $threads -s $tmp_outFolder -f $flowc
 
 ## 2. extract 1d reads
 cat ${tmp_outFolder}/workspace/*fastq | gzip - >  ${tmp_outFolder}/1d.fastq.gz
-cat ${tmp_outFolder}/1dsq_analysis/workspace/*fastq | gzip - >  ${tmp_outFolder}/1d2.fastq.gz
+cat ${tmp_outFolder}/1dsq_analysis/workspace/pass/*fastq | gzip - >  ${tmp_outFolder}/1d2.pass.fastq.gz
+cat ${tmp_outFolder}/1dsq_analysis/workspace/fail/*fastq | gzip - >  ${tmp_outFolder}/1d2.fail.fastq.gz
 
 ## 3. clean up
 rm -rf ${tmp_outFolder}/workspace
