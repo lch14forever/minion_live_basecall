@@ -17,6 +17,11 @@ import paramiko
 MONGO_CFG_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'mongo.yaml')
 CLUSTER_CFG_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'cluster.yaml')
 
+CFG_1D2 = {
+    kit:["SQK-LSK308"],
+    flowcell:["FLO-MIN107"]
+}
+
 def transfer_file(source_file, cluster_cfg, dryrun):
     source_basename = os.path.basename(source_file)
     target_folder = cluster_cfg['data_path']
@@ -129,6 +134,9 @@ def main(arguments):
     source_dir = os.path.abspath(args.inFolder)
     compressed_file, tar_sha1 = make_tarfile(source_dir, args.dryrun)
     libid, flowcell, kit = get_minion_param(compressed_file)
+    basecall_script = 'read_fast5_basecaller.py'
+    if flowcell in CFG_1D2['flowcell'] and kit in CFG_1D2['kit']:
+        basecall_script = 'full_1dsq_basecaller.py'
     ##2. rsync to server
     cluster_cfg['libid'] = libid 
     cluster_tar_path = transfer_file(compressed_file, cluster_cfg, args.dryrun)
@@ -141,7 +149,7 @@ def main(arguments):
         'conda'     :   cluster_cfg['conda_path'],
         'env'       :   cluster_cfg['conda_env'],
         'sha1'      :   tar_sha1,
-        'src'       :   cluster_cfg["process_src"],
+        'src'       :   cluster_cfg["process_src"] + '/' + basecall_script,
         'kit'       :   kit,
         'flowcell'  :   flowcell,
         'status'    :   'unprocessed',
