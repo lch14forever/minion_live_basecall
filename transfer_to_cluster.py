@@ -18,8 +18,8 @@ MONGO_CFG_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'mong
 CLUSTER_CFG_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'cluster.yaml')
 
 CFG_1D2 = {
-    "kit":["SQK-LSK308"],
-    "flowcell":["FLO-MIN107"]
+    "kit":["SQK-LSK308","SQKLSK308","LSK308"],
+    "flowcell":["FLO-MIN107","FLOMIN107","MIN107"]
 }
 
 def transfer_file(source_file, cluster_cfg, dryrun):
