@@ -56,11 +56,11 @@ Access the app at <http://localhost:3838/runApp/>.
 
 Start the shiny app in terminal:
 ```{sh}
-R -e "shiny::runApp('PATH_TO_REPO/minion_live_basecall/runApp')"
+R -e "shiny::runApp('PATH_TO_REPO/minion_live_basecall/runApp', port=XXXX)"
 ```
 ![](watchdog_shinyApp.png)
 
-Access in browser at <http://127.0.0.1:XXXX> (XXXX is the port number randomly selected by Shiny), or <http://localhost:XXXX>.
+Access in browser at <http://127.0.0.1:XXXX> (XXXX is the port number above), or <http://localhost:XXXX>.
 
 ### Using command line version
 ```{sh}
