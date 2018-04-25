@@ -85,7 +85,14 @@ def mongodb_conn(use_test_server=False):
         return None
     ##sys.stderr.write("Database connection established\n")
     return connection
-        
+
+def get_sha1(f):
+    hasher = hashlib.sha1()
+    with open(f, 'rb') as afile:
+        buf = afile.read()
+        hasher.update(buf)
+    return hasher.hexdigest()
+
 def make_tarfile(source_dir, dryrun):
     """
     create a tar file from a directory
@@ -96,24 +103,24 @@ def make_tarfile(source_dir, dryrun):
     with tarfile.open(target_name, "w:gz") as tar:
         tar.dereference = True
         tar.add(source_dir, arcname=os.path.basename(source_dir))
-    hasher = hashlib.sha1()
-    with open(target_name, 'rb') as afile:
-        buf = afile.read()
-        hasher.update(buf)
-    return [target_name, hasher.hexdigest()]
+    return target_name, get_sha1(target_name)
 
 def get_minion_param(compressed_file):
     """
     get sequencing information libid, kit, flowcell
     """
     lib_path = os.path.split(os.path.dirname(compressed_file.rstrip(os.sep)))
-    assert(lib_path[-1]=='fast5') ## minknow default structure
-    date, time, libid, flowcell, kit = lib_path[-2].split('_')[-5:]
-    return [libid, flowcell, kit]
+    assert(lib_path[-1] in ('fast5', 'reads')) ## minknow default structure or gridION structure
+    lib_path = os.path.basename(lib_path[-2]).split('_')[-5:]
+    if lib_path[-1] == 'fast5':
+        date, time, libid, flowcell, kit = lib_path
+    else:
+        libid, flowcell, kit = lib_path
+    return libid, flowcell, kit
 
 def main(arguments):
     parser = argparse.ArgumentParser(description=__doc__)    
-    parser.add_argument('inFolder', help="Input folder (A folder containing fast5 files)")
+    parser.add_argument('inFolder', help="Input folder (A folder containing fast5 files, or a tar file on the server)")
     parser.add_argument('--dryrun',
                         action = "store_true",
                         dest   = "dryrun",
@@ -131,15 +138,20 @@ def main(arguments):
         
     ##1. compress
     ## FIXME: add error/exception handling
-    source_dir = os.path.abspath(args.inFolder)
-    compressed_file, tar_sha1 = make_tarfile(source_dir, args.dryrun)
+    source = os.path.abspath(args.inFolder)
+    if not source[-2:] == 'gz':        
+        compressed_file, tar_sha1 = make_tarfile(source, args.dryrun)
+    else:
+        compressed_file = cluster_tar_path = source
+        tar_sha1 = get_sha1(compressed_file)
     libid, flowcell, kit = get_minion_param(compressed_file)
     basecall_script = 'read_fast5_basecaller.py'
     if flowcell in CFG_1D2['flowcell'] and kit in CFG_1D2['kit']:
         basecall_script = 'full_1dsq_basecaller.py'
     ##2. rsync to server
-    cluster_cfg['libid'] = libid 
-    cluster_tar_path = transfer_file(compressed_file, cluster_cfg, args.dryrun)
+    if not source[-2:] == 'gz':
+        cluster_cfg['libid'] = libid 
+        cluster_tar_path = transfer_file(compressed_file, cluster_cfg, args.dryrun)
     epoch_present = int(time.time())*1000
     ##3. register into MangoDB
     conn = mongodb_conn()
